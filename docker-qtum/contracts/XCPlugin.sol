@@ -1,412 +1,220 @@
 pragma solidity ^0.4.19;
 
-//data structs
-library Data {
-
-    //error code
-    enum ErrCode {
-        Success,
-        NotAdmin,
-        StatusClosed,
-        PlatformNameNotNull,
-        CatNotOwnerPlatformName,
-        NotCredible,
-        InvalidTransferAmount,
-        InsufficientBalance,
-        TransferFailed,
-        PublicKeyNotExist,
-        VoterNotChange,
-        WeightNotSatisfied,
-        InvalidParameter
-    }
-
-    //admin info
-    struct Admin {
-        bool status;
-        bytes32 platformName;
-        address account;
-    }
-
-    struct Proposal {
-        address fromAccount;
-        address toAccount;
-        uint amount;
-        address[] voters;
-    }
-
-    //platform info
-    struct Platform {
-        bytes32 name;
-        uint weight;
-        address[] publicKeys;
-        mapping(string => Proposal) proposals;
-    }
-}
-
-interface XCPluginInterface {
-
-    function start() external;
-
-    function stop() external;
-
-    function getStatus() external constant returns (bool);
-
-    function kill() external;
-
-    function setPlatformName(bytes32 platformName) external;
-
-    function getPlatformName() external constant returns (bytes32);
-
-    function setAdmin(address account) external;
-
-    function getAdmin() external constant returns (address);
-
-    function addCaller(address caller) external;
-
-    function deleteCaller(address caller) external;
-
-    function addPlatform(bytes32 name) external returns (Data.ErrCode);
-
-    function deletePlatform(bytes32 name) external returns (Data.ErrCode);
-
-    function getPlatform(bytes32 platformName) external constant returns (Data.ErrCode ErrCode, bytes32 name, uint weight, address[] publicKeys);
-
-    function existPlatform(bytes32 name) external constant returns (bool);
-
-    function addPublicKey(bytes32 platformName, address publicKey) external returns (Data.ErrCode);
-
-    function deletePublicKey(bytes32 platformName, address publicKey) external returns (Data.ErrCode);
-
-    function countOfPublicKey(bytes32 platformName) external constant returns (Data.ErrCode, uint);
-
-    function setWeight(bytes32 name, uint weight) external returns (Data.ErrCode);
-
-    function getWeight(bytes32 name) external constant returns (Data.ErrCode, uint);
-
-    function voter(bytes32 fromPlatform, address fromAccount, address toAccount, uint amount, string txId, bytes32 r, bytes32 s, uint8 v) external returns (Data.ErrCode ErrCode, bool verify);
-
-    function verifyProposal(bytes32 fromPlatform, address fromAccount, address toAccount, uint amount, string txId) external constant returns (Data.ErrCode);
-
-    function deleteProposal(bytes32 platformName, string txId) external returns (Data.ErrCode);
-}
+import "./XCPluginInterface.sol";
+import "./Data.sol";
 
 contract XCPlugin is XCPluginInterface {
 
     Data.Admin private admin;
 
-    address[] public callers;
+    address[] private callers;
 
     mapping(bytes32 => Data.Platform) private platforms;
 
     function XCPlugin(bytes32 name) public {
+
         admin = Data.Admin(false, name, msg.sender);
     }
 
     function start() external {
-        if (admin.account == msg.sender) {
+
+        require(admin.account == msg.sender);
+
+        if (!admin.status) {
             admin.status = true;
         }
     }
 
     function stop() external {
-        if (admin.account == msg.sender) {
+
+        require(admin.account == msg.sender);
+
+        if (admin.status) {
             admin.status = false;
         }
     }
 
     function getStatus() external constant returns (bool) {
+
         return admin.status;
     }
 
-    /* Function to recover the funds on the contract */
     function kill() external {
-        if (admin.account == msg.sender) {
-            selfdestruct(admin.account);
-        }
+
+        require(admin.account == msg.sender);
+
+        selfdestruct(admin.account);
     }
 
     function setPlatformName(bytes32 platformName) external {
-        if (admin.account == msg.sender) {
+        require(admin.account == msg.sender);
+        if (admin.platformName != platformName) {
             admin.platformName = platformName;
         }
     }
 
     function getPlatformName() external constant returns (bytes32) {
+
         return admin.platformName;
     }
 
-    event voterEvent(bytes32 msgHash,address publicKey);
-
-    //verify sign and verify sign amount meet weight
-    function voter(bytes32 fromPlatform, address fromAccount, address toAccount, uint amount, string txId, bytes32 r, bytes32 s, uint8 v) external returns (Data.ErrCode ErrCode, bool verify) {
-
-        if (!admin.status) {
-            ErrCode = Data.ErrCode.StatusClosed;
-            return;
-        }
-
-        if (notExist(fromPlatform)) {
-            ErrCode = Data.ErrCode.NotCredible;
-            return;
-        }
-
-        bytes32 msgHash = hashMsg(fromPlatform, fromAccount, admin.platformName, toAccount, amount, txId);
-
-        address publicKey = ecrecover(msgHash, v, r, s);
-
-        voterEvent(msgHash,publicKey);
-
-        if (!existPublicKey(fromPlatform, publicKey)) {
-            ErrCode = Data.ErrCode.PublicKeyNotExist;
-            return;
-        }
-
-        initProposal(fromPlatform, txId, fromAccount, toAccount, amount);
-
-        bool change = changeVoters(fromPlatform, publicKey, txId);
-
-        if (change) {
-            ErrCode = Data.ErrCode.Success;
-        } else {
-            ErrCode = Data.ErrCode.VoterNotChange;
-        }
-
-        verify = verifyWeight(fromPlatform, txId);
-
-        return;
-    }
-
-    function getProposal(bytes32 platform, string txId) public returns (address fromAccount, address toAccount, uint amount, address[] voters){
-        fromAccount = platforms[platform].proposals[txId].fromAccount;
-        toAccount = platforms[platform].proposals[txId].toAccount;
-        amount = platforms[platform].proposals[txId].amount;
-        voters = platforms[platform].proposals[txId].voters;
-        return;
-    }
-
-    //verify proposal
-    function verifyProposal(bytes32 fromPlatform, address fromAccount, address toAccount, uint amount, string txId) external constant returns (Data.ErrCode) {
-
-        if (!admin.status) {
-            return Data.ErrCode.StatusClosed;
-        }
-
-        //determine whether fromPlatform exist in xcPlugin's existPlatform
-        if (notExist(fromPlatform)) {
-            return Data.ErrCode.NotCredible;
-        }
-
-        Data.Proposal storage proposal = platforms[fromPlatform].proposals[txId];
-
-        if (proposal.fromAccount != fromAccount || proposal.toAccount != toAccount || proposal.amount != amount) {
-            return Data.ErrCode.InvalidParameter;
-        }
-
-        if (proposal.voters.length < platforms[fromPlatform].weight) {
-            return Data.ErrCode.WeightNotSatisfied;
-        }
-
-        return Data.ErrCode.Success;
-    }
-
-    //remove processed proposal
-    function deleteProposal(bytes32 platformName, string txId) external returns (Data.ErrCode) {
-
-        if (!admin.status) {
-            return Data.ErrCode.StatusClosed;
-        }
-
-        if (callers.length > 0 && !existCaller(msg.sender)) {
-            return Data.ErrCode.NotCredible;
-        }
-
-        if (platformName == "") {
-            return Data.ErrCode.PlatformNameNotNull;
-        }
-
-        if (notExist(platformName)) {
-            return Data.ErrCode.NotCredible;
-        }
-
-        delete platforms[platformName].proposals[txId];
-
-        return Data.ErrCode.Success;
-    }
-
-    //add caller
-    function addCaller(address caller) external {
-        if (admin.account == msg.sender) {
-            callers.push(caller);
-        }
-    }
-
-    //remove caller
-    function deleteCaller(address caller) external {
-        bool exist;
-        for (uint i = 0; i <= callers.length; i++) {
-            if (exist) {
-                if (i == callers.length) {
-                    delete callers[i - 1];
-                    callers.length--;
-                } else {
-                    callers[i - 1] = callers[i];
-                }
-            } else if (callers[i] == caller) {
-                exist = true;
-            }
-        }
-    }
-
-    //set xc-plugin contract's admin
     function setAdmin(address account) external {
-        if (admin.account == msg.sender) {
+
+        require(admin.account == msg.sender);
+
+        if (admin.account != account) {
             admin.account = account;
         }
     }
 
     function getAdmin() external constant returns (address) {
+
+        require(admin.account == msg.sender);
+
         return admin.account;
     }
 
-    function addPlatform(bytes32 platformName) external returns (Data.ErrCode) {
+    function addCaller(address caller) external {
 
-        if (admin.account != msg.sender) {
-            return Data.ErrCode.NotAdmin;
+        require(admin.account == msg.sender);
+
+        if (!existCaller(caller)) {
+            callers.push(caller);
         }
-
-        if (platformName == "") {
-            return Data.ErrCode.PlatformNameNotNull;
-        }
-
-        if (admin.platformName == platformName) {
-            return Data.ErrCode.CatNotOwnerPlatformName;
-        }
-
-        if (notExist(platformName)) {
-            platforms[platformName].name = platformName;
-            platforms[platformName].weight = 1;
-        }
-
-        return Data.ErrCode.Success;
     }
 
-    function deletePlatform(bytes32 name) external returns (Data.ErrCode){
+    function deleteCaller(address caller) external {
 
-        if (admin.account != msg.sender) {
-            return Data.ErrCode.NotAdmin;
+        require(admin.account == msg.sender);
+
+        if (existCaller(caller)) {
+
+            bool exist;
+
+            for (uint i = 0; i <= callers.length; i++) {
+                if (exist) {
+                    if (i == callers.length) {
+                        delete callers[i - 1];
+                        callers.length--;
+                    } else {
+                        callers[i - 1] = callers[i];
+                    }
+                } else if (callers[i] == caller) {
+                    exist = true;
+                }
+            }
+
         }
-
-        if (name == "") {
-            return Data.ErrCode.PlatformNameNotNull;
-        }
-
-        if (notExist(name)) {
-            return Data.ErrCode.NotCredible;
-        }
-
-        delete platforms[name];
-
-        return Data.ErrCode.Success;
     }
 
-    function getPlatform(bytes32 platformName) external constant returns (Data.ErrCode ErrCode, bytes32 name, uint weight, address[] publicKeys) {
+    function existCaller(address caller) public constant returns (bool) {
 
-        if (admin.account != msg.sender) {
-            ErrCode = Data.ErrCode.NotAdmin;
-            return;
+        for (uint i = 0; i < callers.length; i++) {
+            if (callers[i] == caller) {
+                return true;
+            }
         }
 
-        if (platformName == "") {
-            ErrCode = Data.ErrCode.PlatformNameNotNull;
-            return;
-        }
-
-        if (notExist(platformName)) {
-            ErrCode = Data.ErrCode.NotCredible;
-            return;
-        }
-
-        ErrCode = Data.ErrCode.Success;
-        name = platforms[platformName].name;
-        weight = platforms[platformName].weight;
-        publicKeys = platforms[platformName].publicKeys;
-
-        return;
+        return false;
     }
 
-    function existPlatform(bytes32 name) external constant returns (bool){
-        return (platforms[name].name != "");
+    function getCallers() external constant returns (address[]) {
+
+        require(admin.account == msg.sender);
+
+        return callers;
     }
 
-    //set platform weight
-    function setWeight(bytes32 name, uint weight) external returns (Data.ErrCode) {
+    function addPlatform(bytes32 name) external {
 
-        if (admin.account != msg.sender) {
-            return Data.ErrCode.NotAdmin;
+        require(admin.account == msg.sender);
+
+        require(name != "");
+
+        require(name != admin.platformName);
+
+        if (!existPlatform(name)) {
+
+            platforms[name].status = true;
+
+            if (platforms[name].weight == 0) {
+
+                platforms[name].weight = 1;
+            }
         }
-
-        if (notExist(name)) {
-            return Data.ErrCode.NotCredible;
-        }
-
-        platforms[name].weight = weight;
-
-        return Data.ErrCode.Success;
     }
 
-    function getWeight(bytes32 name) external constant returns (Data.ErrCode, uint) {
+    function deletePlatform(bytes32 name) external {
 
-        if (admin.account != msg.sender) {
-            return (Data.ErrCode.NotAdmin, 0);
+        require(admin.account == msg.sender);
+
+        require(name != admin.platformName);
+
+        if (existPlatform(name)) {
+
+            platforms[name].status = false;
         }
-
-        if (notExist(name)) {
-            return (Data.ErrCode.NotCredible, 0);
-        }
-
-        return (Data.ErrCode.Success, platforms[name].weight);
     }
 
-    //add union chain side peer's public key
-    function addPublicKey(bytes32 platformName, address publicKey) external returns (Data.ErrCode) {
+    function existPlatform(bytes32 name) public constant returns (bool){
 
-        if (admin.account != msg.sender) {
-            return Data.ErrCode.NotAdmin;
-        }
+        return platforms[name].status;
+    }
 
-        if (notExist(platformName)) {
-            return Data.ErrCode.NotCredible;
+    function setWeight(bytes32 platformName, uint weight) external {
+
+        require(admin.account == msg.sender);
+
+        require(existPlatform(platformName));
+
+        require(weight>0);
+
+        if (platforms[platformName].weight != weight) {
+
+            platforms[platformName].weight = weight;
         }
+    }
+
+    function getWeight(bytes32 platformName) external constant returns (uint) {
+
+        require(admin.account == msg.sender);
+
+        require(existPlatform(platformName));
+
+        return platforms[platformName].weight;
+    }
+
+    function addPublicKey(bytes32 platformName, address publicKey) external {
+
+        require(admin.account == msg.sender);
+
+        require(existPlatform(platformName));
+
+        require(publicKey != 0x0);
 
         address[] storage listOfPublicKey = platforms[platformName].publicKeys;
 
         for (uint i; i < listOfPublicKey.length; i++) {
             if (publicKey == listOfPublicKey[i]) {
-                return Data.ErrCode.Success;
+                return;
             }
         }
 
         listOfPublicKey.push(publicKey);
-
-        return Data.ErrCode.Success;
     }
 
-    //remove union chain side peer's public key
-    function deletePublicKey(bytes32 platformName, address publickey) external returns (Data.ErrCode) {
+    function deletePublicKey(bytes32 platformName, address publickey) external {
 
-        if (admin.account != msg.sender) {
-            return Data.ErrCode.NotAdmin;
-        }
+        require(admin.account == msg.sender);
 
-        if (notExist(platformName)) {
-            return Data.ErrCode.NotCredible;
-        }
+        require(existPlatform(platformName));
 
         address[] storage listOfPublicKey = platforms[platformName].publicKeys;
 
         bool exist;
 
         for (uint i = 0; i <= listOfPublicKey.length; i++) {
+
             if (exist) {
                 if (i == listOfPublicKey.length) {
                     delete listOfPublicKey[i - 1];
@@ -418,22 +226,113 @@ contract XCPlugin is XCPluginInterface {
                 exist = true;
             }
         }
-
-        return Data.ErrCode.Success;
     }
 
-    //count union chain side peer's public key
-    function countOfPublicKey(bytes32 platformName) external constant returns (Data.ErrCode, uint){
+    function existPublicKey(bytes32 platformName, address publicKey) public constant returns (bool) {
 
-        if (admin.account != msg.sender) {
-            return (Data.ErrCode.NotAdmin, 0);
+        address[] memory listOfPublicKey = platforms[platformName].publicKeys;
+
+        for (uint i = 0; i < listOfPublicKey.length; i++) {
+            if (listOfPublicKey[i] == publicKey) {
+                return true;
+            }
         }
 
-        if (notExist(platformName)) {
-            return (Data.ErrCode.NotCredible, 0);
+        return false;
+    }
+
+    function countOfPublicKey(bytes32 platformName) external constant returns (uint){
+
+        require(admin.account == msg.sender);
+
+        require(existPlatform(platformName));
+
+        return platforms[platformName].publicKeys.length;
+    }
+
+    function publicKeys(bytes32 platformName) external constant returns (address[]){
+
+        require(admin.account == msg.sender);
+
+        require(existPlatform(platformName));
+
+        return platforms[platformName].publicKeys;
+    }
+
+    function voterProposal(bytes32 fromPlatform, address fromAccount, address toAccount, uint value, string txid, bytes sign) external {
+
+        require(admin.status);
+
+        require(existPlatform(fromPlatform));
+
+        bytes32 msgHash = hashMsg(fromPlatform, fromAccount, admin.platformName, toAccount, value, txid);
+
+        address publicKey = recover(msgHash, sign);
+
+        require(existPublicKey(fromPlatform, publicKey));
+
+        Data.Proposal storage proposal = platforms[fromPlatform].proposals[txid];
+
+        require(!proposal.status);
+
+        if (proposal.value == 0) {
+            proposal.fromAccount = fromAccount;
+            proposal.toAccount = toAccount;
+            proposal.value = value;
         }
 
-        return (Data.ErrCode.Success, platforms[platformName].publicKeys.length);
+        changeVoters(fromPlatform, publicKey, txid);
+    }
+
+    function verifyProposal(bytes32 fromPlatform, address fromAccount, address toAccount, uint value, string txid) external constant returns (bool) {
+
+        require(admin.status);
+
+        require(existPlatform(fromPlatform));
+
+        Data.Proposal storage proposal = platforms[fromPlatform].proposals[txid];
+
+        require(proposal.fromAccount == fromAccount && proposal.toAccount == toAccount && proposal.value == value);
+
+        if (proposal.voters.length < platforms[fromPlatform].weight) {
+            return false;
+        }
+
+        return true;
+    }
+
+    function commitProposal(bytes32 platformName, string txid) external returns (bool) {
+
+        require(admin.status);
+
+        require(existCaller(msg.sender));
+
+        require(existPlatform(platformName));
+
+        require(!platforms[platformName].proposals[txid].status);
+
+        platforms[platformName].proposals[txid].status = true;
+
+        return true;
+    }
+
+    function getProposal(bytes32 platformName, string txid) external returns (bool status, address fromAccount, address toAccount, uint value, address[] voters){
+
+        require(admin.status);
+
+        require(existPlatform(platformName));
+
+        fromAccount = platforms[platformName].proposals[txid].fromAccount;
+
+        toAccount = platforms[platformName].proposals[txid].toAccount;
+
+        value = platforms[platformName].proposals[txid].value;
+
+        voters = platforms[platformName].proposals[txid].voters;
+
+        status = platforms[platformName].proposals[txid].status;
+
+        return;
     }
 
     /**
@@ -442,63 +341,42 @@ contract XCPlugin is XCPluginInterface {
      * ######################
      */
 
-    function existCaller(address caller) internal returns (bool) {
-
-        for (uint i = 0; i < callers.length; i++) {
-            if (callers[i] == caller) {
-                return true;
-            }
-        }
-
-        return false;
+    function hashMsg(bytes32 fromPlatform, address fromAccount, bytes32 toPlatform, address toAccount, uint value, string txid) internal returns (bytes32) {
+        return sha256(bytes32ToStr(fromPlatform), ":0x", uintToStr(uint160(fromAccount), 16), ":", bytes32ToStr(toPlatform), ":0x", uintToStr(uint160(toAccount), 16), ":", uintToStr(value, 10), ":", txid);
     }
 
-    function verifyWeight(bytes32 name, string txId) internal returns (bool) {
+    function recover(bytes32 hash, bytes sign) internal pure returns (address) {
 
-        if (platforms[name].proposals[txId].voters.length >= platforms[name].weight) {
-            return true;
+        bytes32 r;
+        bytes32 s;
+        uint8 v;
+
+        if (sign.length != 65) {
+            return (address(0));
         }
 
-        return false;
-    }
-
-    function initProposal(bytes32 name, string txId, address fromAccount, address toAccount, uint amount) internal {
-        Data.Proposal storage proposal = platforms[name].proposals[txId];
-        if (proposal.amount == 0) {
-            proposal.fromAccount = fromAccount;
-            proposal.toAccount = toAccount;
-            proposal.amount = amount;
+        assembly {
+            r := mload(add(sign, 32))
+            s := mload(add(sign, 64))
+            v := byte(0, mload(add(sign, 96)))
         }
-    }
 
-    function existPublicKey(bytes32 platformName, address publicKey) internal constant returns (bool exist) {
+        if (v < 27) {
+            v += 27;
+        }
 
-        address[] memory listOfPublicKey = platforms[platformName].publicKeys;
-
-        for (uint i = 0; i < listOfPublicKey.length; i++) {
-            if (exist) {
-                break;
-            }
-            if (listOfPublicKey[i] == publicKey) {
-                exist = true;
-            }
+        if (v != 27 && v != 28) {
+            return (address(0));
+        } else {
+            return ecrecover(hash, v, r, s);
         }
     }
 
-    //build hash message
-    function hashMsg(bytes32 fromPlatform, address fromAccount, bytes32 toPlatform, address toAccount, uint amount, string txId) internal returns (bytes32) {
-        return sha256(bytes32ToStr(fromPlatform), ":0x", uintToStr(uint160(fromAccount), 16), ":", bytes32ToStr(toPlatform), ":0x", uintToStr(uint160(toAccount), 16), ":", uintToStr(amount, 10), ":", txId);
-    }
+    function changeVoters(bytes32 platformName, address publicKey, string txid) internal {
 
-    function notExist(bytes32 name) internal constant returns (bool){
-        return (platforms[name].name == "");
-    }
+        address[] storage voters = platforms[platformName].proposals[txid].voters;
 
-    function changeVoters(bytes32 platformName, address publicKey, string txId) internal constant returns (bool change) {
-
-        address[] storage voters = platforms[platformName].proposals[txId].voters;
-
-        change = true;
+        bool change = true;
 
         for (uint i = 0; i < voters.length; i++) {
             if (voters[i] == publicKey) {
@@ -533,7 +411,9 @@ contract XCPlugin is XCPluginInterface {
     }
 
     function bytes32ToStr(bytes32 b) internal constant returns (string) {
+
         bytes memory bs = bytes32ToBytes(b);
+
         return string(bs);
     }
 

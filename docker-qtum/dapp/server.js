@@ -43,7 +43,7 @@ async function call(contract,method,params,fromAddr) {
                 console.log("transfer tx:", tx.txid)
                 console.log(tx)
                 // or: await tx.confirm(1)
-                const confirmation = tx.confirm(3)
+                const confirmation = tx.confirm(1)
                 ora.promise(confirmation, "confirm transfer")
                 await confirmation
             }
@@ -102,31 +102,18 @@ app.post('/xc/out/', urlencodedParser,async function (req, res) {
 });
 
 app.post('/xc/in/', urlencodedParser,async function (req, res) {
-    var prefix = "0x"
-    var r = prefix + req.body.sign.substr(0,64)
-    var s = prefix + req.body.sign.substr(64,64)
-    var v = req.body.sign.substr(128,2)
-    var _v = 27;
-    if ( v == '00' || v == '1b') {
-        _v = 27
-    } else if ( v == '01' || v == '1c') {
-        _v = 28
-    }
-    var fromPlatform = req.body.fromPlatform;
-    var fromAccount = prefix+req.body.fromAccount;
-    var toAccount = prefix+req.body.toAccount;
 
-    console.log(fromPlatform, fromAccount, toAccount, req.body.value, req.body.txid, r, s, _v, XCPlugin.sender)
+    console.log(req.body.fromPlatform, req.body.fromAccount, req.body.toAccount, req.body.value, req.body.txid,req.body.sign, XCPlugin.sender)
     // return
 
-    var result = await call("XCPlugin","voter",[fromPlatform, fromAccount, toAccount, req.body.value, req.body.txid, r, s, _v], XCPlugin.sender)
+    var result = await call("XCPlugin","voterProposal",[req.body.fromPlatform, req.body.fromAccount, req.body.toAccount, req.body.value, req.body.txid, req.body.sign], XCPlugin.sender)
     console.log("voter:",result)
     // return
-    result = await call("XCPlugin","verifyProposal",[fromPlatform, fromAccount, toAccount, req.body.value, req.body.txid])
-    console.log("verifyProposal:",result)
+    // var success = await call("XCPlugin","verifyProposal",[req.body.fromPlatform, req.body.fromAccount, req.body.toAccount, req.body.value, req.body.txid])
+    // console.log("verifyProposal:",success)
 
     // return
-    result = await call("XC","unlock",[req.body.txid, fromPlatform, fromAccount, toAccount, req.body.value],XCPlugin.sender)
+    result = await call("XC","unlock",[req.body.txid, req.body.fromPlatform, req.body.fromAccount, req.body.toAccount, req.body.value],XCPlugin.sender)
     console.log("unlock:",result)
 
     result = await call("XC","lockBalance")
@@ -140,50 +127,24 @@ app.post('/xc/in/', urlencodedParser,async function (req, res) {
 });
 
 app.post('/xc/voter/', urlencodedParser,async function (req, res) {
-    var prefix = "0x"
-    var r = req.body.sign.substr(0,64)
-    var s = req.body.sign.substr(64,64)
-    var v = req.body.sign.substr(128,2)
-    var _v = 27;
-    if ( v == '00' || v == '1b') {
-        _v = 27
-    } else if ( v == '01' || v == '1c') {
-        _v = 28
-    }
-    var fromPlatform = req.body.fromPlatform;
-    var fromAccount = prefix+req.body.fromAccount;
-    var toAccount = prefix+req.body.toAccount;
 
-    console.log(fromPlatform, fromAccount, toAccount, req.body.value, req.body.txid, r, s, _v, XCPlugin.sender)
+    console.log(req.body.fromPlatform, req.body.fromAccount, req.body.toAccount, req.body.value, req.body.txid,req.body.sign, XCPlugin.sender)
 
-    var result = await call("XCPlugin","voter",[fromPlatform, fromAccount, toAccount, req.body.value, req.body.txid, r, s, _v], XCPlugin.sender)
-    console.log("voter:",result)
+    var result = await call("XCPlugin","voterProposal",[req.body.fromPlatform, req.body.fromAccount, req.body.toAccount, req.body.value, req.body.txid, req.body.sign], XCPlugin.sender)
+    console.log("voterProposal:",result)
 
     var response = {
-        "voter": ""
+        "voterProposal": "ok"
     };
     console.log(response);
     res.end(JSON.stringify(response));
 });
 
 app.post('/xc/verifyProposal/', urlencodedParser,async function (req, res) {
-    var prefix = "0x"
-    var r = prefix + req.body.sign.substr(0,64)
-    var s = prefix + req.body.sign.substr(64,64)
-    var v = req.body.sign.substr(128,2)
-    var _v = 27;
-    if ( v == '00' || v == '1b') {
-        _v = 27
-    } else if ( v == '01' || v == '1c') {
-        _v = 28
-    }
-    var fromPlatform = req.body.fromPlatform;
-    var fromAccount = prefix+req.body.fromAccount;
-    var toAccount = prefix+req.body.toAccount;
 
-    console.log(fromPlatform, fromAccount, toAccount, req.body.value, req.body.txid, r, s, _v, XCPlugin.sender)
+    console.log(req.body.fromPlatform, req.body.fromAccount, req.body.toAccount, req.body.value, req.body.txid,req.body.sign, XCPlugin.sender)
 
-    var result = await call("XCPlugin","verifyProposal",[fromPlatform, fromAccount, toAccount, req.body.value, req.body.txid])
+    var result = await call("XCPlugin","verifyProposal",[req.body.fromPlatform, req.body.fromAccount, req.body.toAccount, req.body.value, req.body.txid])
     console.log("verifyProposal:",result)
 
     var response = {
@@ -194,23 +155,11 @@ app.post('/xc/verifyProposal/', urlencodedParser,async function (req, res) {
 });
 
 app.post('/xc/unlock/', urlencodedParser,async function (req, res) {
-    var prefix = "0x"
-    var r = prefix + req.body.sign.substr(0,64)
-    var s = prefix + req.body.sign.substr(64,64)
-    var v = req.body.sign.substr(128,2)
-    var _v = 27;
-    if ( v == '00' || v == '1b') {
-        _v = 27
-    } else if ( v == '01' || v == '1c') {
-        _v = 28
-    }
-    var fromPlatform = req.body.fromPlatform;
-    var fromAccount = prefix+req.body.fromAccount;
-    var toAccount = prefix+req.body.toAccount;
 
-    console.log(fromPlatform, fromAccount, toAccount, req.body.value, req.body.txid, r, s, _v, XCPlugin.sender)
+    console.log(req.body.fromPlatform, req.body.fromAccount, req.body.toAccount, req.body.value, req.body.txid,req.body.sign, XCPlugin.sender)
+
     // return
-    result = await call("XC","unlock",[req.body.txid, fromPlatform, fromAccount, toAccount, req.body.value],XCPlugin.sender)
+    result = await call("XC","unlock",[req.body.txid, req.body.fromPlatform, req.body.fromAccount, req.body.toAccount, req.body.value],XCPlugin.sender)
     console.log("unlock:",result)
 
     result = await call("XC","lockBalance")

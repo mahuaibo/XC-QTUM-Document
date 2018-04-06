@@ -72,6 +72,7 @@ mainnet
 
 > sh deploy.sh
 
+```
 exec: solc [contracts/INK.sol --combined bin,metadata --optimize --allow-paths /dapp]
 🚀  All contracts confirmed
    deployed contracts/INK.sol => e3797cce46935d101fd2f0aed97bb90942d7ebe5
@@ -81,9 +82,11 @@ exec: solc [contracts/XCPlugin.sol --combined bin,metadata --optimize --allow-pa
 exec: solc [contracts/XC.sol --combined bin,metadata --optimize --allow-paths /dapp]
 🚀  All contracts confirmed
    deployed contracts/XC.sol => 4077b42542400fc83e0d40d2ddd5e95030d8f2e4
+```
    
 > sh deploy_status.sh
 
+```
 ✅  contracts/INK.sol
         txid: 69a8db955968d4d69727f0f2b8d99b01b3983deb8f61b3129d5da955d912366b
      address: e3797cce46935d101fd2f0aed97bb90942d7ebe5
@@ -101,6 +104,7 @@ exec: solc [contracts/XC.sol --combined bin,metadata --optimize --allow-paths /d
      address: 4d646714810702415446a1115dcc98ab0a57d0d2
    confirmed: true
        owner: qb1rbaQYVaqpsK5aHGbj1RKeyt8xYUpthg
+```
        
 
 ### 初始化合约环境
@@ -108,6 +112,7 @@ exec: solc [contracts/XC.sol --combined bin,metadata --optimize --allow-paths /d
 更改对于的合约地址
 > vim p_init.sh
 
+```
 INKHexAddress="e3797cce46935d101fd2f0aed97bb90942d7ebe5"
 INKAddress=`qcli fromhexaddress $INKHexAddress`
 INKOwner="qJ1HrnP8mLW85F5o6iyN5EPHtZsjPs5jze"
@@ -124,6 +129,7 @@ XCPluginHexAddress="4d646714810702415446a1115dcc98ab0a57d0d2"
 XCPluginAddress=`qcli fromhexaddress ${XCPluginHexAddress}`
 XCPluginOwner="qb1rbaQYVaqpsK5aHGbj1RKeyt8xYUpthg"
 XCPluginHexOwner=`qcli gethexaddress ${XCPluginOwner}`
+```
 
 初始化操作者资金
 > sh asset.sh
