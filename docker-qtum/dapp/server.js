@@ -59,6 +59,9 @@ app.post('/xc/init/', urlencodedParser,async function (req, res) {
     result = await call("XCPlugin","addPublicKey",[req.body.platform,req.body.publicKey], XCPlugin.sender)
     console.log("XCPlugin addPublicKey:",result)
 
+    result = await call("XCPlugin","addPublicKey",[req.body.platform,req.body.publicKey2], XCPlugin.sender)
+    console.log("XCPlugin addPublicKey2:",result)
+
     result = await call("XCPlugin","addCaller",[XC.address], XCPlugin.sender)
     console.log("XCPlugin addCaller:",result)
 
@@ -196,9 +199,34 @@ app.post('/xc/balanceOf/', urlencodedParser,async function (req, res) {
     res.end(JSON.stringify(response));
 });
 
+app.post('/xc/setWeight/', urlencodedParser,async function (req, res) {
+
+    console.log(req.body.platformName, req.body.weight);
+    var result = await call("XCPlugin","setWeight",[req.body.platformName, req.body.weight],XCPlugin.sender)
+    console.log("setWeight:",result)
+
+    var response = {
+        "setWeight":result
+    };
+    console.log(response);
+    res.end(JSON.stringify(response));
+});
+
+app.post('/xc/getWeight/', urlencodedParser,async function (req, res) {
+
+    var result = await call("XCPlugin","getWeight",[req.body.platformName])
+    console.log("getWeight:",result)
+
+    var response = {
+        "getWeight":result
+    };
+    console.log(response);
+    res.end(JSON.stringify(response));
+});
 
 
-var server = app.listen(8080, function () {
+
+var server = app.listen(8888, function () {
     var host = server.address().address
     var port = server.address().port
     console.log("http://%s:%s", host, port)
