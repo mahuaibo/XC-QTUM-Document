@@ -107,7 +107,7 @@ interface XCInterface {
      * Administrator’s transfer in of cross chain.
      * @param txid transaction id.
      * @param fromPlatform name of form platform.
-     * @param fromAccount ame of to platform.
+     * @param fromAccount account of to platform.
      * @param toAccount account of to platform.
      * @param value transfer amount.
      */

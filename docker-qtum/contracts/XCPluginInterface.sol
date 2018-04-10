@@ -150,9 +150,9 @@ interface XCPluginInterface {
      * @param toAccount account of to platform.
      * @param value transfer amount.
      * @param txid transaction id.
-     * @param r transaction signature.
-     * @param s transaction signature.
-     * @param v transaction signature.
+     * @param r transaction signature (signature[0:64]).
+     * @param s transaction signature (signature[64:128]).
+     * @param v transaction signature (uint8(signature[128:130])).
      */
     function voteProposal(bytes32 fromPlatform, address fromAccount, address toAccount, uint value, string txid, bytes32 r, bytes32 s, uint8 v) external;
 
@@ -164,7 +164,7 @@ interface XCPluginInterface {
      * @param value transfer amount.
      * @param txid transaction id.
      */
-    function verifyProposal(bytes32 fromPlatform, address fromAccount, address toAccount, uint value, string txid) external constant returns (bool);
+    function verifyProposal(bytes32 fromPlatform, address fromAccount, address toAccount, uint value, string txid) external constant returns (bool,bool);
 
     /**
      * Commit the transaction proposal.
@@ -177,11 +177,18 @@ interface XCPluginInterface {
      * Get the transaction proposal information.
      * @param platformName a platform name.
      * @param txid transaction id.
-     * @return status
-     * @return fromAccount
-     * @return toAccount
-     * @return value
-     * @return voters
+     * @return status completion status of proposal.
+     * @return fromAccount account of to platform.
+     * @return toAccount account of to platform.
+     * @return value transfer amount.
+     * @return voters notarial voters.
      */
     function getProposal(bytes32 platformName, string txid) external returns (bool status, address fromAccount, address toAccount, uint value, address[] voters);
+
+    /**
+     * Delete the transaction proposal information.
+     * @param platformName a platform name.
+     * @param txid transaction id.
+     */
+    function deleteProposal(bytes32 platformName, string txid) external;
 }

@@ -1,7 +1,9 @@
 pragma solidity ^0.4.19;
 
 import "./XCInterface.sol";
+
 import "./INK.sol";
+
 import "./XCPlugin.sol";
 
 contract XC is XCInterface {
@@ -13,8 +15,11 @@ contract XC is XCInterface {
      * @field account Current contract administrator.
      */
     struct Admin {
+
         uint8 status;
+
         bytes32 platformName;
+
         address account;
     }
 
@@ -42,6 +47,7 @@ contract XC is XCInterface {
         require(status == 0 || status == 1 || status == 2 || status == 3);
 
         if (admin.status != status) {
+
             admin.status = status;
         }
     }
@@ -63,6 +69,7 @@ contract XC is XCInterface {
         require(admin.account == msg.sender);
 
         if (admin.platformName != platformName) {
+
             admin.platformName = platformName;
         }
     }
@@ -89,6 +96,7 @@ contract XC is XCInterface {
         require(admin.account == msg.sender);
 
         if (inkToken != account) {
+
             inkToken = INK(account);
         }
     }
@@ -103,6 +111,7 @@ contract XC is XCInterface {
         require(admin.account == msg.sender);
 
         if (xcPlugin != account) {
+
             xcPlugin = XCPlugin(account);
         }
     }
@@ -124,10 +133,12 @@ contract XC is XCInterface {
 
         //get user approve the contract quota
         uint allowance = inkToken.allowance(msg.sender, this);
+
         require(allowance >= value);
 
         //do transferFrom
         bool success = inkToken.transferFrom(msg.sender, this, value);
+
         require(success);
 
         //record the amount of local platform turn out
@@ -150,9 +161,9 @@ contract XC is XCInterface {
         require(value > 0);
 
         //verify args by function xcPlugin.verify
-        bool verify = xcPlugin.verifyProposal(fromPlatform, fromAccount, toAccount, value, txid);
+        var (complete,verify) = xcPlugin.verifyProposal(fromPlatform, fromAccount, toAccount, value, txid);
 
-        require(verify);
+        require(verify && !complete);
 
         //get contracts balance
         uint balance = inkToken.balanceOf(this);
@@ -197,14 +208,17 @@ contract XC is XCInterface {
         require(value > 0);
 
         uint allowance = inkToken.allowance(msg.sender, this);
+
         require(allowance >= value);
 
         bool success = inkToken.transferFrom(msg.sender, this, value);
+
         require(success);
 
         lockBalance += value;
 
         if (admin.platformName != toPlatform && xcPlugin.existPlatform(toPlatform)) {
+
             lockEvent(toPlatform, toAccount, uintAppendToString(value));
         }
     }
@@ -228,6 +242,7 @@ contract XC is XCInterface {
         lockBalance -= value;
 
         if (fromPlatform != admin.platformName) {
+
             unlockEvent(txid, fromPlatform, fromAccount, uintAppendToString(value));
         }
     }
@@ -249,8 +264,11 @@ contract XC is XCInterface {
         uint i = 0;
 
         while (v != 0) {
+
             uint remainder = v % 16;
+
             v = v / 16;
+
             reversed[i++] = byte(sixTeenStr[remainder]);
         }
 
@@ -259,6 +277,7 @@ contract XC is XCInterface {
         bytes memory str = bytes(bytesList);
 
         for (uint j = 0; j < i; j++) {
+
             str[str.length - j - 1] = reversed[i - j - 1];
         }
 
