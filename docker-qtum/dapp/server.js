@@ -76,7 +76,7 @@ app.post('/xc/init/', urlencodedParser,async function (req, res) {
     result = await call("XCPlugin","start",[], XCPlugin.sender)
     console.log("XCPlugin start:",result)
 
-    result = await call("XC","start",[], XC.sender)
+    result = await call("XC","setStatus",[3], XC.sender)
     console.log("XC start:",result)
     var response = {
         "ok":"ok"
@@ -85,6 +85,8 @@ app.post('/xc/init/', urlencodedParser,async function (req, res) {
 });
 
 app.post('/xc/out/', urlencodedParser,async function (req, res) {
+
+    console.log(JSON.stringify(req.body))
 
     var result = await call("INK","approve",[XC.address,req.body.value],INK.sender)
     console.log("approve:",result)
@@ -106,12 +108,21 @@ app.post('/xc/out/', urlencodedParser,async function (req, res) {
 
 app.post('/xc/in/', urlencodedParser,async function (req, res) {
 
-    console.log(req.body.fromPlatform, req.body.fromAccount, req.body.toAccount, req.body.value, req.body.txid,req.body.sign, XCPlugin.sender)
+    var sign = req.body.sign;
+    var r = sign.substr(0,64)
+    var s = sign.substr(64,64)
+    var v = sign.substr(128,2)
+    var _v = 27;
+    if ( v == '00' || v == '1b') {
+        _v = 27
+    } else if ( v == '01' || v == '1c') {
+        _v = 28
+    }
+    console.log(req.body.fromPlatform, req.body.fromAccount, req.body.toAccount, req.body.value, req.body.txid,r,s,_v, XCPlugin.sender)
     // return
 
-    var result = await call("XCPlugin","voterProposal",[req.body.fromPlatform, req.body.fromAccount, req.body.toAccount, req.body.value, req.body.txid, req.body.sign], XCPlugin.sender)
+    var result = await call("XCPlugin","voteProposal",[req.body.fromPlatform, req.body.fromAccount, req.body.toAccount, req.body.value, req.body.txid,r,s,_v], XCPlugin.sender)
     console.log("voter:",result)
-    // return
     // var success = await call("XCPlugin","verifyProposal",[req.body.fromPlatform, req.body.fromAccount, req.body.toAccount, req.body.value, req.body.txid])
     // console.log("verifyProposal:",success)
 
@@ -130,11 +141,20 @@ app.post('/xc/in/', urlencodedParser,async function (req, res) {
 });
 
 app.post('/xc/voter/', urlencodedParser,async function (req, res) {
+    var sign = req.body.sign;
+    var r = sign.substr(0,64)
+    var s = sign.substr(64,64)
+    var v = sign.substr(128,2)
+    var _v = 27;
+    if ( v == '00' || v == '1b') {
+        _v = 27
+    } else if ( v == '01' || v == '1c') {
+        _v = 28
+    }
+    console.log(req.body.fromPlatform, req.body.fromAccount, req.body.toAccount, req.body.value, req.body.txid,r,s,_v, XCPlugin.sender)
 
-    console.log(req.body.fromPlatform, req.body.fromAccount, req.body.toAccount, req.body.value, req.body.txid,req.body.sign, XCPlugin.sender)
-
-    var result = await call("XCPlugin","voterProposal",[req.body.fromPlatform, req.body.fromAccount, req.body.toAccount, req.body.value, req.body.txid, req.body.sign], XCPlugin.sender)
-    console.log("voterProposal:",result)
+    var result = await call("XCPlugin","voteProposal",[req.body.fromPlatform, req.body.fromAccount, req.body.toAccount, req.body.value, req.body.txid,r,s,_v], XCPlugin.sender)
+    console.log("voter:",result)
 
     var response = {
         "voterProposal": "ok"

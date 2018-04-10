@@ -1,13 +1,24 @@
 pragma solidity ^0.4.19;
 
 import "./XCInterface.sol";
-import "./Data.sol";
 import "./INK.sol";
 import "./XCPlugin.sol";
 
 contract XC is XCInterface {
 
-    Data.Admin private admin;
+    /**
+     * Contract Administrator
+     * @field status Contract external service status.
+     * @field platformName Current contract platform name.
+     * @field account Current contract administrator.
+     */
+    struct Admin {
+        uint8 status;
+        bytes32 platformName;
+        address account;
+    }
+
+    Admin private admin;
 
     uint public lockBalance;
 
@@ -21,28 +32,21 @@ contract XC is XCInterface {
 
     function XC(bytes32 name) public payable {
 
-        admin = Data.Admin(false, name, msg.sender);
+        admin = Admin(0, name, msg.sender);
     }
 
-    function start() external {
+    function setStatus(uint8 status) external {
 
         require(admin.account == msg.sender);
 
-        if (!admin.status) {
-            admin.status = true;
+        require(status == 0 || status == 1 || status == 2 || status == 3);
+
+        if (admin.status != status) {
+            admin.status = status;
         }
     }
 
-    function stop() external {
-
-        require(admin.account == msg.sender);
-
-        if (admin.status) {
-            admin.status = true;
-        }
-    }
-
-    function getStatus() external constant returns (bool) {
+    function getStatus() external constant returns (uint8) {
 
         return admin.status;
     }
@@ -110,7 +114,7 @@ contract XC is XCInterface {
 
     function lock(bytes32 toPlatform, address toAccount, uint value) external payable {
 
-        require(admin.status);
+        require(admin.status == 2 || admin.status == 3);
 
         require(xcPlugin.getStatus());
 
@@ -137,7 +141,7 @@ contract XC is XCInterface {
     //turn in
     function unlock(string txid, bytes32 fromPlatform, address fromAccount, address toAccount, uint value) external payable {
 
-        require(admin.status);
+        require(admin.status == 1 || admin.status == 3);
 
         require(xcPlugin.getStatus());
 
@@ -169,7 +173,7 @@ contract XC is XCInterface {
         unlockEvent(txid, fromPlatform, fromAccount, uintAppendToString(value));
     }
 
-    function withdrawal(address account, uint value) external payable {
+    function withdraw(address account, uint value) external payable {
 
         require(admin.account == msg.sender);
 

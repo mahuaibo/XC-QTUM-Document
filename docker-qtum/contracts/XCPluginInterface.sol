@@ -150,9 +150,11 @@ interface XCPluginInterface {
      * @param toAccount account of to platform.
      * @param value transfer amount.
      * @param txid transaction id.
-     * @param sign transaction signature.
+     * @param r transaction signature.
+     * @param s transaction signature.
+     * @param v transaction signature.
      */
-    function voterProposal(bytes32 fromPlatform, address fromAccount, address toAccount, uint value, string txid, bytes sign) external;
+    function voteProposal(bytes32 fromPlatform, address fromAccount, address toAccount, uint value, string txid, bytes32 r, bytes32 s, uint8 v) external;
 
     /**
      * Verify that the transaction proposal is valid.

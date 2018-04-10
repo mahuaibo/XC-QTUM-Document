@@ -6,36 +6,37 @@ myPlatform="5154554d00000000000000000000000000000000000000000000000000000000"
 #INK
 otherPlatform="494e4b0000000000000000000000000000000000000000000000000000000000"
 otherPlatformPubKey="4230a12f5b0693dd88bb35c79d7e56a68614b199"
+otherPlatformPubKey2="4230a12f5b0693dd88bb35c79d7e56a68614b199"
 
-INKHexAddress="591bca5a4555beb56e2a3f3e0d7fd124611d0347"
+INKHexAddress="025541f433e581866806059aa01838a489d3b42c"
 INKAddress=`qcli fromhexaddress $INKHexAddress`
-INKOwner="qaGA9d5SMct9oiWZ4vmh73AC7EVuAMEVdB"
+INKOwner="qZSt6V1AXzbd9Lrez8SNxdWNVFqXUV5DVX"
 INKHexOwner=`qcli gethexaddress $INKOwner`
 
-XCHexAddress="fa2488cc521939986831e7200af7a33c4c4543e8"
+XCHexAddress="7925959b92057096194057366c0ca1c60c8c763c"
 XCAddress=`qcli fromhexaddress ${XCHexAddress}`
-XCOwner="qf3sJzmy6mhfKLcPUGtKwDjngt8H5QGnAD"
+XCOwner="qPMUZCT5yzrvicerscZKgDaWykTi6DUTR9"
 XCHexOwner=`qcli gethexaddress ${XCOwner}`
 
-XCPluginHexAddress="0ac3d54cfc9853eb224bdb6c971b6e1824dd7bc0"
+XCPluginHexAddress="4046f6b3de8482fe702c1eb2a007b2154c98fdd0"
 XCPluginAddress=`qcli fromhexaddress ${XCPluginHexAddress}`
-XCPluginOwner="qcw9oNeuHo6STc2H3C421F1pGAA2QVmqJR"
+XCPluginOwner="qRapLk25oj2oi8iNtggh5eApCd71PEJWtX"
 XCPluginHexOwner=`qcli gethexaddress ${XCPluginOwner}`
 
 #✅  contracts/INK.sol
-#        txid: 73e5a0cecf906be5bbd1dc2de5d98717881d121330a4579bb950c9cf5f481b73
-#     address: 591bca5a4555beb56e2a3f3e0d7fd124611d0347
+#        txid: 41617b9b16c7e4513e8d69dd0073a64fb4ee1a9c50ee1ae214499921c6bbdc2c
+#     address: 025541f433e581866806059aa01838a489d3b42c
 #   confirmed: true
-#       owner: qaGA9d5SMct9oiWZ4vmh73AC7EVuAMEVdB
+#       owner: qZSt6V1AXzbd9Lrez8SNxdWNVFqXUV5DVX
 #
 #✅  contracts/XC.sol
-#        txid: 7cf0ff8edfaba21ae236cea131cc60c6504185fb12645be2d6c34f1d20acde65
-#     address: fa2488cc521939986831e7200af7a33c4c4543e8
+#        txid: ec00d5bf2b1b36a1ac2846656a31be655a7951e96d5fe6ea5c4be06f65ebcee2
+#     address: 7925959b92057096194057366c0ca1c60c8c763c
 #   confirmed: true
-#       owner: qf3sJzmy6mhfKLcPUGtKwDjngt8H5QGnAD
+#       owner: qPMUZCT5yzrvicerscZKgDaWykTi6DUTR9
 #
 #✅  contracts/XCPlugin.sol
-#        txid: 6d95273537fce657c9cbdee68e566f45001140243c51917c115c62705466f231
-#     address: 0ac3d54cfc9853eb224bdb6c971b6e1824dd7bc0
+#        txid: 5d4050dbf49888ee0a67ca4b39a1307c7e973afa578fd5e1ca784d918983bc57
+#     address: 4046f6b3de8482fe702c1eb2a007b2154c98fdd0
 #   confirmed: true
-#       owner: qcw9oNeuHo6STc2H3C421F1pGAA2QVmqJR
+#       owner: qRapLk25oj2oi8iNtggh5eApCd71PEJWtX

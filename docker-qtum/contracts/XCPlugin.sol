@@ -1,19 +1,60 @@
 pragma solidity ^0.4.19;
 
 import "./XCPluginInterface.sol";
-import "./Data.sol";
 
 contract XCPlugin is XCPluginInterface {
 
-    Data.Admin private admin;
+    /**
+     * Contract Administrator
+     * @field status Contract external service status.
+     * @field platformName Current contract platform name.
+     * @field account Current contract administrator.
+     */
+    struct Admin {
+        bool status;
+        bytes32 platformName;
+        address account;
+    }
+
+    /**
+     * Transaction Proposal
+     * @field status Transaction proposal status(false:pending,true:complete).
+     * @field fromAccount Account of form platform.
+     * @field toAccount Account of to platform.
+     * @field value Transfer amount.
+     * @field voters Proposers.
+     */
+    struct Proposal {
+        bool status;
+        address fromAccount;
+        address toAccount;
+        uint value;
+        address[] voters;
+    }
+
+    /**
+     * Trusted Platform
+     * @field status Trusted platform state(false:no trusted,true:trusted).
+     * @field weight weight of platform.
+     * @field publicKeys list of public key.
+     * @field proposals list of proposal.
+     */
+    struct Platform {
+        bool status;
+        uint weight;
+        address[] publicKeys;
+        mapping(string => Proposal) proposals;
+    }
+
+    Admin private admin;
 
     address[] private callers;
 
-    mapping(bytes32 => Data.Platform) private platforms;
+    mapping(bytes32 => Platform) private platforms;
 
     function XCPlugin(bytes32 name) public {
 
-        admin = Data.Admin(false, name, msg.sender);
+        admin = Admin(false, name, msg.sender);
     }
 
     function start() external {
@@ -259,7 +300,7 @@ contract XCPlugin is XCPluginInterface {
         return platforms[platformName].publicKeys;
     }
 
-    function voterProposal(bytes32 fromPlatform, address fromAccount, address toAccount, uint value, string txid, bytes sign) external {
+    function voteProposal(bytes32 fromPlatform, address fromAccount, address toAccount, uint value, string txid, bytes32 r,bytes32 s,uint8 v) external {
 
         require(admin.status);
 
@@ -267,11 +308,11 @@ contract XCPlugin is XCPluginInterface {
 
         bytes32 msgHash = hashMsg(fromPlatform, fromAccount, admin.platformName, toAccount, value, txid);
 
-        address publicKey = recover(msgHash, sign);
+        address publicKey = ecrecover(msgHash, v, r, s);
 
         require(existPublicKey(fromPlatform, publicKey));
 
-        Data.Proposal storage proposal = platforms[fromPlatform].proposals[txid];
+        Proposal storage proposal = platforms[fromPlatform].proposals[txid];
 
         require(!proposal.status);
 
@@ -290,7 +331,7 @@ contract XCPlugin is XCPluginInterface {
 
         require(existPlatform(fromPlatform));
 
-        Data.Proposal storage proposal = platforms[fromPlatform].proposals[txid];
+        Proposal storage proposal = platforms[fromPlatform].proposals[txid];
 
         require(proposal.fromAccount == fromAccount && proposal.toAccount == toAccount && proposal.value == value);
 
@@ -318,8 +359,6 @@ contract XCPlugin is XCPluginInterface {
 
     function getProposal(bytes32 platformName, string txid) external returns (bool status, address fromAccount, address toAccount, uint value, address[] voters){
 
-        require(admin.status);
-
         require(existPlatform(platformName));
 
         fromAccount = platforms[platformName].proposals[txid].fromAccount;
@@ -343,33 +382,6 @@ contract XCPlugin is XCPluginInterface {
 
     function hashMsg(bytes32 fromPlatform, address fromAccount, bytes32 toPlatform, address toAccount, uint value, string txid) internal returns (bytes32) {
         return sha256(bytes32ToStr(fromPlatform), ":0x", uintToStr(uint160(fromAccount), 16), ":", bytes32ToStr(toPlatform), ":0x", uintToStr(uint160(toAccount), 16), ":", uintToStr(value, 10), ":", txid);
-    }
-
-    function recover(bytes32 hash, bytes sign) internal pure returns (address) {
-
-        bytes32 r;
-        bytes32 s;
-        uint8 v;
-
-        if (sign.length != 65) {
-            return (address(0));
-        }
-
-        assembly {
-            r := mload(add(sign, 32))
-            s := mload(add(sign, 64))
-            v := byte(0, mload(add(sign, 96)))
-        }
-
-        if (v < 27) {
-            v += 27;
-        }
-
-        if (v != 27 && v != 28) {
-            return (address(0));
-        } else {
-            return ecrecover(hash, v, r, s);
-        }
     }
 
     function changeVoters(bytes32 platformName, address publicKey, string txid) internal {

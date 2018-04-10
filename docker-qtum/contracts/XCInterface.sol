@@ -6,20 +6,16 @@ pragma solidity ^0.4.19;
 interface XCInterface {
 
     /**
-     * Open the contract service status.
+     * Set contract service status.
+     * @param status contract service status (0:closed;1:only-closed-lock;2:only-closed-unlock;3:opened;).
      */
-    function start() external;
-
-    /**
-     * Close the contract service status.
-     */
-    function stop() external;
+    function setStatus(uint8 status) external;
 
     /**
      * Get contract service status.
      * @return contract service status.
      */
-    function getStatus() external constant returns (bool);
+    function getStatus() external constant returns (uint8);
 
     /**
      * Destruction of the contract.
@@ -97,7 +93,7 @@ interface XCInterface {
      * @param account the specified account.
      * @param value transfer amount.
      */
-    function withdrawal(address account, uint value) external payable;
+    function withdraw(address account, uint value) external payable;
 
     /**
      * Administrator’s transfer out of cross chain.
