@@ -507,6 +507,10 @@ contract XCPlugin is XCPluginInterface {
             }
         }
 
+        if (base == 16) {
+            length = 40;
+        }
+
         bytes memory bs = new bytes(length);
 
         for (uint i = 0; i < length; i++) {
