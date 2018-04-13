@@ -26,6 +26,7 @@ contract XCPlugin is XCPluginInterface {
      * @field toAccount Account of to platform.
      * @field value Transfer amount.
      * @field voters Proposers.
+     * @field weight The weight value of the completed time.
      */
     struct Proposal {
 
@@ -38,6 +39,8 @@ contract XCPlugin is XCPluginInterface {
         uint value;
 
         address[] voters;
+
+        uint weight;
     }
 
     /**
@@ -347,8 +350,6 @@ contract XCPlugin is XCPluginInterface {
 
         Proposal storage proposal = platforms[fromPlatform].proposals[txid];
 
-        require(!proposal.status);
-
         if (proposal.value == 0) {
 
             proposal.fromAccount = fromAccount;
@@ -364,7 +365,7 @@ contract XCPlugin is XCPluginInterface {
         changeVoters(fromPlatform, publicKey, txid);
     }
 
-    function verifyProposal(bytes32 fromPlatform, address fromAccount, address toAccount, uint value, string txid) external constant returns (bool,bool) {
+    function verifyProposal(bytes32 fromPlatform, address fromAccount, address toAccount, uint value, string txid) external constant returns (bool, bool) {
 
         require(admin.status);
 
@@ -372,9 +373,19 @@ contract XCPlugin is XCPluginInterface {
 
         Proposal storage proposal = platforms[fromPlatform].proposals[txid];
 
+        if (proposal.status) {
+
+            return (true, (proposal.voters.length >= proposal.weight));
+        }
+
+        if (proposal.value == 0) {
+
+            return (false, false);
+        }
+
         require(proposal.fromAccount == fromAccount && proposal.toAccount == toAccount && proposal.value == value);
 
-        return (proposal.status,(proposal.voters.length >= platforms[fromPlatform].weight));
+        return (false,(proposal.voters.length >= platforms[fromPlatform].weight));
     }
 
     function commitProposal(bytes32 platformName, string txid) external returns (bool) {
@@ -389,10 +400,12 @@ contract XCPlugin is XCPluginInterface {
 
         platforms[platformName].proposals[txid].status = true;
 
+        platforms[platformName].proposals[txid].weight = platforms[platformName].proposals[txid].voters.length;
+
         return true;
     }
 
-    function getProposal(bytes32 platformName, string txid) external returns (bool status, address fromAccount, address toAccount, uint value, address[] voters){
+    function getProposal(bytes32 platformName, string txid) external returns (bool status, address fromAccount, address toAccount, uint value, address[] voters, uint weight){
 
         require(admin.status);
 
@@ -408,6 +421,8 @@ contract XCPlugin is XCPluginInterface {
 
         status = platforms[platformName].proposals[txid].status;
 
+        weight = platforms[platformName].proposals[txid].weight;
+
         return;
     }
 
@@ -417,7 +432,7 @@ contract XCPlugin is XCPluginInterface {
 
         require(existPlatform(platformName));
 
-        if (platforms[platformName].proposals[txid].value > 0 ) {
+        if (platforms[platformName].proposals[txid].value > 0) {
 
             delete platforms[platformName].proposals[txid];
         }

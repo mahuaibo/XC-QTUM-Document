@@ -182,8 +182,9 @@ interface XCPluginInterface {
      * @return toAccount account of to platform.
      * @return value transfer amount.
      * @return voters notarial voters.
+     * @return weight The weight value of the completed time.
      */
-    function getProposal(bytes32 platformName, string txid) external returns (bool status, address fromAccount, address toAccount, uint value, address[] voters);
+    function getProposal(bytes32 platformName, string txid) external returns (bool status, address fromAccount, address toAccount, uint value, address[] voters, uint weight);
 
     /**
      * Delete the transaction proposal information.
