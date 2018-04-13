@@ -161,7 +161,7 @@ contract XC is XCInterface {
         require(value > 0);
 
         //verify args by function xcPlugin.verify
-        var (complete,verify) = xcPlugin.verifyProposal(fromPlatform, fromAccount, toAccount, value, txid);
+        var (complete, verify) = xcPlugin.verifyProposal(fromPlatform, fromAccount, toAccount, value, txid);
 
         require(verify && !complete);
 

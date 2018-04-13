@@ -164,7 +164,7 @@ interface XCPluginInterface {
      * @param value transfer amount.
      * @param txid transaction id.
      */
-    function verifyProposal(bytes32 fromPlatform, address fromAccount, address toAccount, uint value, string txid) external constant returns (bool,bool);
+    function verifyProposal(bytes32 fromPlatform, address fromAccount, address toAccount, uint value, string txid) external constant returns (bool, bool);
 
     /**
      * Commit the transaction proposal.

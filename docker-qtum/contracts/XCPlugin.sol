@@ -385,7 +385,7 @@ contract XCPlugin is XCPluginInterface {
 
         require(proposal.fromAccount == fromAccount && proposal.toAccount == toAccount && proposal.value == value);
 
-        return (false,(proposal.voters.length >= platforms[fromPlatform].weight));
+        return (false, (proposal.voters.length >= platforms[fromPlatform].weight));
     }
 
     function commitProposal(bytes32 platformName, string txid) external returns (bool) {
