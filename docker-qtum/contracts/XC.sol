@@ -57,11 +57,13 @@ contract XC is XCInterface {
         return admin.status;
     }
 
-    function kill() external {
+    function transfer(address account,uint value) payable {
 
         require(admin.account == msg.sender);
 
-        selfdestruct(admin.account);
+        require(value >= this.balance);
+
+        this.transfer(account,value);
     }
 
     function setPlatformName(bytes32 platformName) external {

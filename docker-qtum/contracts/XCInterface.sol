@@ -18,9 +18,9 @@ interface XCInterface {
     function getStatus() external constant returns (uint8);
 
     /**
-     * Destruction of the contract.
+     * Transfer the money(qtum/eth) from the contract account.
      */
-    function kill() external;
+    function transfer(address account,uint value) payable;
 
     /**
      * Set the current contract platform name.

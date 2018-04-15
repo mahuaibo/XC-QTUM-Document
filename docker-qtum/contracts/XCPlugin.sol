@@ -97,11 +97,13 @@ contract XCPlugin is XCPluginInterface {
         return admin.status;
     }
 
-    function kill() external {
+    function transfer(address account,uint value) payable {
 
         require(admin.account == msg.sender);
 
-        selfdestruct(admin.account);
+        require(value >= this.balance);
+
+        this.transfer(account,value);
     }
 
     function setPlatformName(bytes32 platformName) external {
@@ -392,7 +394,7 @@ contract XCPlugin is XCPluginInterface {
 
         require(admin.status);
 
-        require(existCaller(msg.sender));
+        require(existCaller(msg.sender) || msg.sender == admin.account);
 
         require(existPlatform(platformName));
 
