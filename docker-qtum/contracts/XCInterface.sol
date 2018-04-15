@@ -20,7 +20,7 @@ interface XCInterface {
     /**
      * Transfer the money(qtum/eth) from the contract account.
      */
-    function transfer(address account,uint value) payable;
+    function transfer(address account, uint value) payable;
 
     /**
      * Set the current contract platform name.

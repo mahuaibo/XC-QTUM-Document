@@ -97,13 +97,13 @@ contract XCPlugin is XCPluginInterface {
         return admin.status;
     }
 
-    function transfer(address account,uint value) payable {
+    function transfer(address account, uint value) payable {
 
         require(admin.account == msg.sender);
 
         require(value >= this.balance);
 
-        this.transfer(account,value);
+        this.transfer(account, value);
     }
 
     function setPlatformName(bytes32 platformName) external {
