@@ -127,7 +127,7 @@ contract Token {
 
         allowed[msg.sender][spender] += value;
 
-        emit Approval(msg.sender, spender, allowed[msg.sender][spender]);
+        Approval(msg.sender, spender, allowed[msg.sender][spender]);
 
         return true;
     }
@@ -142,7 +142,7 @@ contract Token {
             allowed[msg.sender][spender] -= value;
         }
 
-        emit Approval(msg.sender, spender, allowed[msg.sender][spender]);
+        Approval(msg.sender, spender, allowed[msg.sender][spender]);
 
         return true;
     }

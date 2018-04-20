@@ -39,6 +39,8 @@ contract XC is XCInterface {
 
     function XC(bytes32 name) public payable {
 
+        compareSymbol = "-=";
+
         // totalSupply = 10 * (10 ** 8) * (10 ** 9);
         lockBalance = 0;
 
