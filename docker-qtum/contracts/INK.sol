@@ -1,138 +1,183 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.4.19;
 
 contract Token {
-    //Gets the number of tokens that the account _owner owns.
-    function balanceOf(address _owner) constant returns (uint256 balance);
 
-    //The token from the message sender's account to the to account number is value.
-    function transfer(address _to, uint256 _value) returns (bool success);
-
-    //The message sending account setting account spender can transfer the amount of value from the sending account.
-    function transferFrom(address _from, address _to, uint256 _value) returns (bool success);
-
-    //The message sending account setting account spender can transfer the amount of value from the sending account.
-    function approve(address _spender, uint256 _value) returns (bool success);
-
-    //The access account spender can transfer the number of tokens from the account owner.
-    function allowance(address _owner, address _spender) constant returns (uint256 remaining);
-
-    //Events that must be triggered when a transfer occurs.
-    event Transfer(address indexed _from, address indexed _to, uint256 _value);
-
-    //The event that must be triggered when the function approve(address spender, uint256 value) executes successfully.
-    event Approval(address indexed _owner, address indexed _spender, uint256 _value);
-
-    //The total token amount, by default, generates a getter function interface for the public variable, named totalSupply().
-    uint256 public totalSupply;
-}
-
-contract StandardToken is Token {
-
-    mapping(address => uint256) balances;
-
-    mapping(address => mapping(address => uint256)) allowed;
-
-    function balanceOf(address _owner) constant returns (uint256 balance) {
-        return balances[_owner];
-    }
-
-    function transfer(address _to, uint256 _value) returns (bool success) {
-
-        require(balances[msg.sender] >= _value && balances[_to] + _value > balances[_to]);
-
-        balances[msg.sender] -= _value;
-
-        balances[_to] += _value;
-
-        Transfer(msg.sender, _to, _value);
-
-        return true;
-    }
-
-    function transferFrom(address _from, address _to, uint256 _value) returns (bool success) {
-
-        require(balances[_from] >= _value && allowed[_from][msg.sender] >= _value && balances[_to] + _value > balances[_to]);
-
-        balances[_to] += _value;
-
-        balances[_from] -= _value;
-
-        allowed[_from][msg.sender] -= _value;
-
-        Transfer(_from, _to, _value);
-
-        return true;
-    }
-
-    function approve(address _spender, uint256 _value) returns (bool success) {
-
-        allowed[msg.sender][_spender] = _value;
-
-        Approval(msg.sender, _spender, _value);
-
-        return true;
-    }
-
-    function increaseApproval(address _spender, uint _addedValue) public returns (bool) {
-
-        require(_addedValue > 0);
-
-        allowed[msg.sender][_spender] = allowed[msg.sender][_spender] + _addedValue;
-
-        Approval(msg.sender, _spender, allowed[msg.sender][_spender]);
-
-        return true;
-    }
-
-    function decreaseApproval(address _spender, uint _subtractedValue) public returns (bool) {
-
-        require(_subtractedValue > 0);
-
-        uint oldValue = allowed[msg.sender][_spender];
-
-        if (_subtractedValue >= oldValue) {
-            allowed[msg.sender][_spender] = 0;
-        } else {
-            allowed[msg.sender][_spender] = oldValue - _subtractedValue;
-        }
-
-        Approval(msg.sender, _spender, allowed[msg.sender][_spender]);
-
-        return true;
-    }
-
-    function allowance(address _owner, address _spender) constant returns (uint256 remaining) {
-        return allowed[_owner][_spender];
-    }
-}
-
-contract INK is StandardToken {
-
-    // token name
     string public name;
 
-    uint8  public decimals;
-
-    // token symbol
     string public symbol;
 
-    function(){
-        revert();
-    }
+    uint8 public decimals;
 
-    function INK() {
-        name = 'INK Coin';
-        symbol = 'INK';
+    uint public totalSupply;
+
+    bool private status;
+
+    address private admin;
+
+    mapping(address => uint) private balances;
+
+    mapping(address => mapping(address => uint)) private allowed;
+
+    event Transfer(address indexed from, address indexed to, uint value);
+
+    event Approval(address indexed owner, address indexed spender, uint value);
+
+    function Token() public {
+
+        name = "INK Coin";
+
+        symbol = "INK";
+
         decimals = 9;
-        totalSupply = 10 * (10 ** 8) * (10 ** uint256(decimals));
+
+        totalSupply = 10 * (10 ** 8) * (10 ** uint(decimals));
+
         balances[msg.sender] = totalSupply;
+
+        admin = msg.sender;
     }
 
-    /* Approves and then calls the receiving contract */
-    function approveAndCall(address _spender, uint256 _value, bytes _extraData) returns (bool success) {
-        allowed[msg.sender][_spender] = _value;
-        Approval(msg.sender, _spender, _value);
-        require(_spender.call(bytes4(bytes32(sha3("receiveApproval(address,uint256,address,bytes)"))), msg.sender, _value, this, _extraData));
+    function setStatus(bool _status) {
+
+        require(msg.sender == admin);
+
+        status = _status;
+    }
+
+    function getStatus() returns (bool) {
+
+        return status;
+    }
+
+    function setAdmin(address account) {
+
+        require(msg.sender == admin);
+
+        if (admin != account) {
+            admin = account;
+        }
+    }
+
+    function getAdmin() returns (address) {
+
+        require(msg.sender == admin);
+
+        return admin;
+    }
+
+
+    function balanceOf(address owner) public constant returns (uint) {
+
+        return balances[owner];
+    }
+
+    function transfer(address to, uint value) public returns (bool) {
+
+        require(status);
+
+        require(to != address(0));
+
+        require(value <= balances[msg.sender]);
+
+        balances[msg.sender] -= value;
+
+        balances[to] += value;
+
+        emit Transfer(msg.sender, to, value);
+
         return true;
+    }
+
+    function transferFrom(address from, address to, uint value) public returns (bool) {
+
+        require(status);
+
+        require(to != address(0));
+
+        require(value <= balances[from]);
+
+        require(value <= allowed[from][msg.sender]);
+
+        balances[from] -= value;
+
+        balances[to] += value;
+
+        allowed[from][msg.sender] -= value;
+
+        emit Transfer(from, to, value);
+
+        return true;
+    }
+
+    function allowance(address owner, address spender) public constant returns (uint) {
+
+        return allowed[owner][spender];
+    }
+
+    function approve(address spender, uint value) public returns (bool) {
+
+        allowed[msg.sender][spender] = value;
+
+        emit Approval(msg.sender, spender, value);
+
+        return true;
+    }
+
+    function increaseApproval(address spender, uint value) public returns (bool) {
+
+        allowed[msg.sender][spender] += value;
+
+        emit Approval(msg.sender, spender, allowed[msg.sender][spender]);
+
+        return true;
+    }
+
+    function decreaseApproval(address spender, uint value) public returns (bool) {
+
+        if (value > allowed[msg.sender][spender]) {
+
+            allowed[msg.sender][spender] = 0;
+        } else {
+
+            allowed[msg.sender][spender] -= value;
+        }
+
+        emit Approval(msg.sender, spender, allowed[msg.sender][spender]);
+
+        return true;
+    }
+
+    function approveAndCall(byte symb, address spender, uint value, bytes extraData) returns (bool success) {
+
+        require(spender != address(0));
+
+        require(symb == '-' || symb == '' || symb == '+');
+
+        bool status;
+
+        if (symb == '-') {
+
+            status = decreaseApproval(spender, value);
+        }
+
+        if (symb == '') {
+
+            status = approve(spender, value);
+        }
+
+        if (symb == '+') {
+
+            status = increaseApproval(spender, value);
+        }
+
+        if (status) {
+
+            if (!spender.call(bytes4(bytes32(sha3("receiveApproval(address,uint,address,bytes)"))), msg.sender, value, this, extraData)) {
+
+                revert();
+            }
+
+            return true;
+        }
     }
 }

@@ -1,115 +1,183 @@
 pragma solidity ^0.4.19;
 
-/**
- * XC Contract Interface.
- */
-interface XCInterface {
+contract Token {
 
-    /**
-     * Set contract service status.
-     * @param status contract service status (0:closed;1:only-closed-lock;2:only-closed-unlock;3:opened;).
-     */
-    function setStatus(uint8 status) external;
+    string public name;
 
-    /**
-     * Get contract service status.
-     * @return contract service status.
-     */
-    function getStatus() external constant returns (uint8);
+    string public symbol;
 
-    /**
-     * Transfer the money(qtum/eth) from the contract account.
-     */
-    function transfer(address account, uint value) payable;
+    uint8 public decimals;
 
-    /**
-     * Set the current contract platform name.
-     * @param platformName platform name.
-     */
-    function setPlatformName(bytes32 platformName) external;
+    uint public totalSupply;
 
-    /**
-     * Get the current contract platform name.
-     * @return contract platform name.
-     */
-    function getPlatformName() external constant returns (bytes32);
+    bool private status;
 
-    /**
-     * Set the current contract administrator.
-     * @param account account of contract administrator.
-     */
-    function setAdmin(address account) external;
+    address private admin;
 
-    /**
-     * Get the current contract administrator.
-     * @return contract administrator.
-     */
-    function getAdmin() external constant returns (address);
+    mapping(address => uint) private balances;
 
-    /**
-     * Set the INK contract address.
-     * @param account contract address.
-     */
-    function setINK(address account) external;
+    mapping(address => mapping(address => uint)) private allowed;
 
-    /**
-     * Get the INK contract address.
-     * @return contract address.
-     */
-    function getINK() external constant returns (address);
+    event Transfer(address indexed from, address indexed to, uint value);
 
-    /**
-     * Set the XCPlugin contract address.
-     * @param account contract address.
-     */
-    function setXCPlugin(address account) external;
+    event Approval(address indexed owner, address indexed spender, uint value);
 
-    /**
-     * Get the XCPlugin contract address.
-     * @return contract address.
-     */
-    function getXCPlugin() external constant returns (address);
+    function Token() public {
 
-    /**
-     * Transfer out of cross chain.
-     * @param toPlatform name of to platform.
-     * @param toAccount account of to platform.
-     * @param value transfer amount.
-     */
-    function lock(bytes32 toPlatform, address toAccount, uint value) external payable;
+        name = "INK Coin";
 
-    /**
-     * Transfer in of cross chain.
-     * @param txid transaction id.
-     * @param fromPlatform name of form platform.
-     * @param fromAccount ame of to platform.
-     * @param toAccount account of to platform.
-     * @param value transfer amount.
-     */
-    function unlock(string txid, bytes32 fromPlatform, address fromAccount, address toAccount, uint value) external payable;
+        symbol = "INK";
 
-    /**
-     * Transfer the misoperation to the amount of the contract account to the specified account.
-     * @param account the specified account.
-     * @param value transfer amount.
-     */
-    function withdraw(address account, uint value) external payable;
+        decimals = 9;
 
-    /**
-     * Administrator’s transfer out of cross chain.
-     * @param toPlatform name of to platform.
-     * @param toAccount account of to platform.
-     * @param value transfer amount.
-     */
-    function lockAdmin(bytes32 toPlatform, address toAccount, uint value) external payable;
+        totalSupply = 10 * (10 ** 8) * (10 ** uint(decimals));
 
-    /**
-     * Administrator’s transfer in of cross chain.
-     * @param txid transaction id.
-     * @param fromPlatform name of form platform.
-     * @param fromAccount account of to platform.
-     * @param toAccount account of to platform.
-     * @param value transfer amount.
-     */
-    function unlockAdmin(string txid, bytes32 fromPlatform, address fromAccount, address toAccount, uint value) external payable;
+        balances[msg.sender] = totalSupply;
+
+        admin = msg.sender;
+    }
+
+    function setStatus(bool _status) {
+
+        require(msg.sender == admin);
+
+        status = _status;
+    }
+
+    function getStatus() returns (bool) {
+
+        return status;
+    }
+
+    function setAdmin(address account) {
+
+        require(msg.sender == admin);
+
+        if (admin != account) {
+            admin = account;
+        }
+    }
+
+    function getAdmin() returns (address) {
+
+        require(msg.sender == admin);
+
+        return admin;
+    }
+
+
+    function balanceOf(address owner) public constant returns (uint) {
+
+        return balances[owner];
+    }
+
+    function transfer(address to, uint value) public returns (bool) {
+
+        require(status);
+
+        require(to != address(0));
+
+        require(value <= balances[msg.sender]);
+
+        balances[msg.sender] -= value;
+
+        balances[to] += value;
+
+        emit Transfer(msg.sender, to, value);
+
+        return true;
+    }
+
+    function transferFrom(address from, address to, uint value) public returns (bool) {
+
+        require(status);
+
+        require(to != address(0));
+
+        require(value <= balances[from]);
+
+        require(value <= allowed[from][msg.sender]);
+
+        balances[from] -= value;
+
+        balances[to] += value;
+
+        allowed[from][msg.sender] -= value;
+
+        emit Transfer(from, to, value);
+
+        return true;
+    }
+
+    function allowance(address owner, address spender) public constant returns (uint) {
+
+        return allowed[owner][spender];
+    }
+
+    function approve(address spender, uint value) public returns (bool) {
+
+        allowed[msg.sender][spender] = value;
+
+        emit Approval(msg.sender, spender, value);
+
+        return true;
+    }
+
+    function increaseApproval(address spender, uint value) public returns (bool) {
+
+        allowed[msg.sender][spender] += value;
+
+        emit Approval(msg.sender, spender, allowed[msg.sender][spender]);
+
+        return true;
+    }
+
+    function decreaseApproval(address spender, uint value) public returns (bool) {
+
+        if (value > allowed[msg.sender][spender]) {
+
+            allowed[msg.sender][spender] = 0;
+        } else {
+
+            allowed[msg.sender][spender] -= value;
+        }
+
+        emit Approval(msg.sender, spender, allowed[msg.sender][spender]);
+
+        return true;
+    }
+
+    function approveAndCall(byte symb, address spender, uint value, bytes extraData) returns (bool success) {
+
+        require(spender != address(0));
+
+        require(symb == '-' || symb == '' || symb == '+');
+
+        bool status;
+
+        if (symb == '-') {
+
+            status = decreaseApproval(spender, value);
+        }
+
+        if (symb == '') {
+
+            status = approve(spender, value);
+        }
+
+        if (symb == '+') {
+
+            status = increaseApproval(spender, value);
+        }
+
+        if (status) {
+
+            if (!spender.call(bytes4(bytes32(sha3("receiveApproval(address,uint,address,bytes)"))), msg.sender, value, this, extraData)) {
+
+                revert();
+            }
+
+            return true;
+        }
+    }
 }
