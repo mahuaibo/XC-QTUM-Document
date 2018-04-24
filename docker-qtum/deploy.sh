@@ -2,8 +2,8 @@
 
 source p_init.sh
 
-solar deploy contracts/INK.sol
+solar deploy contracts/Token.sol
 
-solar deploy contracts/XCPlugin.sol '["'${myPlatform}'"]'
+solar deploy contracts/XCPlugin.sol
 
-solar deploy contracts/XC.sol '["'${myPlatform}'"]'
+solar deploy contracts/XC.sol

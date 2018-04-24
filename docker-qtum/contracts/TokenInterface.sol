@@ -4,11 +4,11 @@ interface TokenInterface {
 
     function setStatus(bool _status) external;
 
-    function getStatus() external returns (bool);
+    function getStatus() external constant returns (bool);
 
     function setAdmin(address account) external;
 
-    function getAdmin() external returns (address);
+    function getAdmin() external constant returns (address);
 
     function balanceOf(address owner) external constant returns (uint);
 
