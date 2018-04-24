@@ -42,16 +42,16 @@ interface XCInterface {
     function getAdmin() external constant returns (address);
 
     /**
-     * Set the INK contract address.
+     * Set the Token contract address.
      * @param account contract address.
      */
-    function setINK(address account) external;
+    function setToken(address account) external;
 
     /**
-     * Get the INK contract address.
+     * Get the Token contract address.
      * @return contract address.
      */
-    function getINK() external constant returns (address);
+    function getToken() external constant returns (address);
 
     /**
      * Set the XCPlugin contract address.
@@ -75,7 +75,7 @@ interface XCInterface {
      * Get the comparison symbol in the contract.
      * @return comparison symbol.
      */
-    function getCompare () external returns (bytes2);
+    function getCompare() external constant returns (bytes2);
 
     /**
      * Transfer out of cross chain.
@@ -104,6 +104,8 @@ interface XCInterface {
 
     /**
      * Transfer the money(qtum/eth) from the contract account.
+     * @param account the specified account.
+     * @param value transfer amount.
      */
     function transfer(address account, uint value) external payable;
 }

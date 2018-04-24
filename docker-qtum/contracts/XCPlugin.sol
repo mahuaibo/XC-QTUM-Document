@@ -67,7 +67,9 @@ contract XCPlugin is XCPluginInterface {
 
     mapping(bytes32 => Platform) private platforms;
 
-    function XCPlugin(bytes32 name) public {
+    function XCPlugin() public {
+        //TODO
+        bytes32 name = "QTUM";
 
         admin = Admin(false, name, msg.sender);
     }
@@ -97,15 +99,6 @@ contract XCPlugin is XCPluginInterface {
         return admin.status;
     }
 
-    function transfer(address account, uint value) payable {
-
-        require(admin.account == msg.sender);
-
-        require(value >= this.balance);
-
-        this.transfer(account, value);
-    }
-
     function setPlatformName(bytes32 platformName) external {
 
         require(admin.account == msg.sender);
@@ -122,6 +115,8 @@ contract XCPlugin is XCPluginInterface {
     }
 
     function setAdmin(address account) external {
+
+        require(account != address(0));
 
         require(admin.account == msg.sender);
 
@@ -261,7 +256,7 @@ contract XCPlugin is XCPluginInterface {
 
         require(existPlatform(platformName));
 
-        require(publicKey != address(0x0));
+        require(publicKey != address(0));
 
         address[] storage listOfPublicKey = platforms[platformName].publicKeys;
 
@@ -306,6 +301,8 @@ contract XCPlugin is XCPluginInterface {
     }
 
     function existPublicKey(bytes32 platformName, address publicKey) public constant returns (bool) {
+
+        require(admin.account == msg.sender || msg.sender == this);
 
         address[] memory listOfPublicKey = platforms[platformName].publicKeys;
 
@@ -407,7 +404,7 @@ contract XCPlugin is XCPluginInterface {
         return true;
     }
 
-    function getProposal(bytes32 platformName, string txid) external returns (bool status, address fromAccount, address toAccount, uint value, address[] voters, uint weight){
+    function getProposal(bytes32 platformName, string txid) external constant returns (bool status, address fromAccount, address toAccount, uint value, address[] voters, uint weight){
 
         require(admin.status);
 
@@ -430,14 +427,39 @@ contract XCPlugin is XCPluginInterface {
 
     function deleteProposal(bytes32 platformName, string txid) external {
 
-        require(admin.account == msg.sender);
+        require(msg.sender == admin.account);
 
         require(existPlatform(platformName));
 
-        if (platforms[platformName].proposals[txid].value > 0) {
+        delete platforms[platformName].proposals[txid];
+    }
 
-            delete platforms[platformName].proposals[txid];
-        }
+    function withdraw(address account, uint value) external payable {
+
+        require(admin.account == msg.sender);
+
+        require(account != address(0));
+
+        require(token.totalSupply >= value && value > 0);
+
+        uint balance = token.balanceOf(this);
+
+        require(toCompare(SafeMath.sub(balance, lockBalance), value));
+
+        bool success = token.transfer(account, value);
+
+        require(success);
+    }
+
+    function transfer(address account, uint value) external payable {
+
+        require(admin.account == msg.sender);
+
+        require(account != address(0));
+
+        require(value > 0 && value >= this.balance);
+
+        this.transfer(account, value);
     }
 
     /**

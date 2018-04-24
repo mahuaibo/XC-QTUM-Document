@@ -22,11 +22,6 @@ interface XCPluginInterface {
     function getStatus() external constant returns (bool);
 
     /**
-     * Transfer the money(qtum/eth) from the contract account.
-     */
-    function transfer(address account,uint value) payable;
-
-    /**
      * Set the current contract platform name.
      * @param platformName platform name.
      */
@@ -184,7 +179,7 @@ interface XCPluginInterface {
      * @return voters notarial voters.
      * @return weight The weight value of the completed time.
      */
-    function getProposal(bytes32 platformName, string txid) external returns (bool status, address fromAccount, address toAccount, uint value, address[] voters, uint weight);
+    function getProposal(bytes32 platformName, string txid) external constant returns (bool status, address fromAccount, address toAccount, uint value, address[] voters, uint weight);
 
     /**
      * Delete the transaction proposal information.
@@ -192,4 +187,18 @@ interface XCPluginInterface {
      * @param txid transaction id.
      */
     function deleteProposal(bytes32 platformName, string txid) external;
+
+    /**
+     * Transfer the misoperation to the amount of the contract account to the specified account.
+     * @param account the specified account.
+     * @param value transfer amount.
+     */
+    function withdraw(address account, uint value) external payable;
+
+    /**
+     * Transfer the money(qtum/eth) from the contract account.
+     * @param account the specified account.
+     * @param value transfer amount.
+     */
+    function transfer(address account, uint value) external payable;
 }

@@ -1,7 +1,7 @@
 #! /bin/bash
 
 echo '      ############################'
-echo '     #     1: INK.sol     #'
+echo '     #     1: Token.sol     #'
 echo '    #     2: XCPlugin.sol     #'
 echo '   #     3: XC.sol        #'
 echo '  ############################'
@@ -10,8 +10,8 @@ read aNum
 
 case $aNum in
     '') docker run --rm -v ${PWD}:/solidity ethereum/solc:stable  \
-                    --optimize --bin --abi --hashes -o /solidity/src/INK  \
-                    --overwrite /solidity/INK.sol
+                    --optimize --bin --abi --hashes -o /solidity/src/Token  \
+                    --overwrite /solidity/Token.sol
 
         docker run --rm -v ${PWD}:/solidity ethereum/solc:stable  \
                     --optimize --bin --abi --hashes -o /solidity/src/XCPlugin  \
@@ -22,8 +22,8 @@ case $aNum in
                     --overwrite /solidity/XC.sol
     ;;
     1) docker run --rm -v ${PWD}:/solidity ethereum/solc:stable  \
-                    --optimize --bin --abi --hashes -o /solidity/src/INK  \
-                    --overwrite /solidity/INK.sol
+                    --optimize --bin --abi --hashes -o /solidity/src/Token  \
+                    --overwrite /solidity/Token.sol
     ;;
     2) docker run --rm -v ${PWD}:/solidity ethereum/solc:stable  \
                     --optimize --bin --abi --hashes -o /solidity/src/XCPlugin  \

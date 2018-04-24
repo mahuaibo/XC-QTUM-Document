@@ -1,5 +1,7 @@
 pragma solidity ^0.4.19;
 
+import "./math/SafeMath.sol";
+
 contract Token {
 
     string public name;
@@ -23,25 +25,32 @@ contract Token {
     event Approval(address indexed owner, address indexed spender, uint value);
 
     function Token() public {
-
+        //TODO
         name = "INK Coin";
-
+        //TODO
         symbol = "INK";
-
+        //TODO
         decimals = 9;
+        //TODO
+        initSupply = 10 * (10 ** 8);
 
-        totalSupply = 10 * (10 ** 8) * (10 ** uint(decimals));
+        totalSupply = SafeMath.mul(initSupply, (10 ** uint(decimals)));
 
         balances[msg.sender] = totalSupply;
 
         admin = msg.sender;
+
+        status = true;
     }
 
     function setStatus(bool _status) {
 
         require(msg.sender == admin);
 
-        status = _status;
+        if (status != _status) {
+
+            status = _status;
+        }
     }
 
     function getStatus() returns (bool) {
@@ -54,6 +63,7 @@ contract Token {
         require(msg.sender == admin);
 
         if (admin != account) {
+
             admin = account;
         }
     }
@@ -77,11 +87,13 @@ contract Token {
 
         require(to != address(0));
 
-        require(value <= balances[msg.sender]);
+        require(totalSupply >= value && value > 0);
 
-        balances[msg.sender] -= value;
+        require(balances[msg.sender] >= value);
 
-        balances[to] += value;
+        balances[msg.sender] = SafeMath.sub(balances[msg.sender], value);
+
+        balances[to] = SafeMath.add(balances[to], value);
 
         emit Transfer(msg.sender, to, value);
 
@@ -94,15 +106,17 @@ contract Token {
 
         require(to != address(0));
 
-        require(value <= balances[from]);
+        require(totalSupply >= value && value > 0);
 
-        require(value <= allowed[from][msg.sender]);
+        require(balances[from] >= value);
 
-        balances[from] -= value;
+        require(allowed[from][msg.sender] >= value);
 
-        balances[to] += value;
+        balances[from] = SafeMath.sub(balances[from], value);
 
-        allowed[from][msg.sender] -= value;
+        balances[to] = SafeMath.add(balances[to], value);
+
+        allowed[from][msg.sender] = SafeMath.sub(allowed[from][msg.sender], value);
 
         emit Transfer(from, to, value);
 
@@ -125,7 +139,7 @@ contract Token {
 
     function increaseApproval(address spender, uint value) public returns (bool) {
 
-        allowed[msg.sender][spender] += value;
+        allowed[msg.sender][spender] = SafeMath.add(allowed[msg.sender][spender], value);
 
         Approval(msg.sender, spender, allowed[msg.sender][spender]);
 
@@ -139,7 +153,7 @@ contract Token {
             allowed[msg.sender][spender] = 0;
         } else {
 
-            allowed[msg.sender][spender] -= value;
+            allowed[msg.sender][spender] = SafeMath.sub(allowed[msg.sender][spender], value);
         }
 
         Approval(msg.sender, spender, allowed[msg.sender][spender]);
